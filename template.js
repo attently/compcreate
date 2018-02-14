@@ -23,8 +23,6 @@ class CLASSNAME extends Component {
 
 	componentWillUpdate() {}
 
-	render() {}
-
 	componentDidUpdate() {}
 
 	componentWillUnmount() {}
