@@ -1,0 +1,27 @@
+{
+  "name": "compcreate",
+  "version": "1.0.0",
+  "description": "A command line tool to create React components",
+  "preferGlobal": true,
+  "bin": {
+    "compcreate": "index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/attently/compcreate.git"
+  },
+  "keywords": [
+    "react",
+    "component",
+    "generator"
+  ],
+  "author": "Attently, Inc.",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/attently/compcreate/issues"
+  },
+  "homepage": "https://github.com/attently/compcreate#readme"
+}
