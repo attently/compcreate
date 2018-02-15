@@ -11,21 +11,6 @@ const path = require('path');
 
 const templateFiles = ['template.js','template.stateless.js'];
 
-let isDirectory = (dirPath) => {
-	return new Promise((resolve, reject) => {
-		fs.stat(dirPath, (err, stats) => {
-			if(err) {
-				if(err.code == 'ENOENT')
-					resolve(false);
-				else
-					reject(err);
-			}
-			else
-				resolve(stats.isDirectory());
-		});
-	});
-};
-
 let getFileNameFromPath = (dirPath) => {
 	let splitPath = dirPath.split(path.sep);
 
@@ -37,7 +22,7 @@ let getFileNameFromPath = (dirPath) => {
 
 let copyTemplate = (dirPath, filename) => {
 	return new Promise((resolve, reject) => {
-		fs.copy(`${__dirname + path.sep}template`, `${dirPath}`, err => {
+		fs.copy(`${__dirname + path.sep}template`, `${dirPath}`, (err) => {
 			if (err)
 				reject(err);
 			else
@@ -49,14 +34,14 @@ let copyTemplate = (dirPath, filename) => {
 let renameFile = (templateName,dirPath,filename) => {
 	let fname = filename + templateName.slice(8);
 	return new Promise((resolve, reject) => {
-		fs.move(`${dirPath + path.sep + templateName}`,`${dirPath + path.sep + fname}`, err => {
+		fs.move(`${dirPath + path.sep + templateName}`,`${dirPath + path.sep + fname}`, (err) => {
 			if (err) 
 				reject(err);
 			else
 				resolve();
 		});
 	});
-}
+};
 
 let replaceTemplateParams = (fname, dirPath, filename) => {
 	return new Promise((resolve, reject) => {
@@ -88,12 +73,12 @@ let createScssFile = (dirPath, filename) => {
 				resolve();
 		});
 	});
-}
+};
 
 let createReactComponentFiles = async (dirPath) => {
 	try {
 		let filename = getFileNameFromPath(dirPath);
-		let files = [...templateFiles.map( fname => `${filename + fname.slice(8)}`), 'index.js'];
+		let files = [...templateFiles.map( (fname) => `${filename + fname.slice(8)}`), 'index.js'];
 
 		await copyTemplate(dirPath, filename);
 		for (let fname of templateFiles)
