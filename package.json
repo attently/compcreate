@@ -23,5 +23,8 @@
   "bugs": {
     "url": "https://github.com/attently/compcreate/issues"
   },
-  "homepage": "https://github.com/attently/compcreate#readme"
+  "homepage": "https://github.com/attently/compcreate#readme",
+  "dependencies": {
+    "fs-extra": "^5.0.0"
+  }
 }
