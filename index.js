@@ -74,7 +74,8 @@ let replaceTemplateParams = (dirPath, filename) => {
 				return;
 			}
 
-			let newData = data.replace(/CLASSNAME/g, filename);
+			let className = `${filename.slice(0,1).toUpperCase()}${filename.slice(1)}`;
+			let newData = data.replace(/CLASSNAME/g, className);
 
 			fs.writeFile(`${dirPath + path.sep + filename}.js`, newData, (err) => {
 				if(err)
