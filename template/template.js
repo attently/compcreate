@@ -1,4 +1,5 @@
 import {Component} from 'react';
+import CLASSNAMEStateless from './CLASSNAME.stateless.js';
 
 class CLASSNAME extends Component {
 	constructor(props) {
@@ -11,7 +12,7 @@ class CLASSNAME extends Component {
 
 	render() {
 		return (
-			<div></div>
+			<CLASSNAMEStateless />
 		);
 	}
 
