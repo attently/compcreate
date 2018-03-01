@@ -9,31 +9,42 @@ const parser = new ArgumentParser({
 	description: 'Compcreate is a command line tool for creating React components easily.',
 });
 
+parser.addArgument(['names'], {
+	help: 'A list of desired component names.',
+	nargs: '*',
+});
+
 parser.addArgument(['-d', '--directory'], {
-	help: `Creates a new directory for component files (default: ${config.createDirectory}).`,
+	help: `Creates a new directory for component files.`,
+	defaultValue: config.createDirectory,
 	action: 'storeTrue',
 });
 
 parser.addArgument(['-i', '--index'], {
-	help: `Creates an index.js file for easier importing from directory (default: ${config.createIndex}).`,
+	help: `Creates an index.js file for easier importing from directory.`,
+	defaultValue: config.createIndex,
 	action: 'storeTrue',
 });
 
 parser.addArgument(['-s', '--stateless'], {
-	help: `Creates a stateless component that is included inside main component (default: ${config.createStateless}).`,
+	help: `Creates a stateless component that is included inside main component.`,
+	defaultValue: config.createStateless,
 	action: 'storeTrue',
 });
 
 parser.addArgument(['-c', '--scss'], {
-	help: `Creates a SCSS file for custom component styles (default: ${config.createScss}).`,
+	help: `Creates a SCSS file for custom component styles.`,
+	defaultValue: config.createScss,
 	action: 'storeTrue',
 });
 
 const args = parser.parseArgs();
 
-if(process.argv.length < 3) {
-	// console.log('compcreate must be passed in a path for a new component.');
-	// console.log(`Example: compcreate /path/to/desired/component`);
+const filesCreated = [];
+const directoriesCreated = [];
+
+if(!args.names.length) {
+	parser.printHelp();
 	process.exit(1);
 }
 
@@ -124,5 +135,5 @@ const createReactComponentFiles = async (dirPath) => {
 	}
 };
 
-for(const dirPath of process.argv.slice(2))
+for(const dirPath of args.names)
 	createReactComponentFiles(dirPath);
