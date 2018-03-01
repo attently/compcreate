@@ -11,7 +11,7 @@ class CLASSNAME extends Component {
 
 	render() {
 		return (
-			<div></div>
+			RETURNCONTENTS;
 		);
 	}
 
@@ -19,7 +19,9 @@ class CLASSNAME extends Component {
 
 	componentWillReceiveProps() {}
 
-	shouldComponentUpdate() {}
+	shouldComponentUpdate() {
+		return true;
+	}
 
 	componentWillUpdate() {}
 

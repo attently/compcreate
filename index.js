@@ -1,53 +1,50 @@
 #! /usr/bin/env node
 
+const config = require('./config.json');
+const ArgumentParser = require('argparse').ArgumentParser;
+const version = require('./package.json').version;
+const parser = new ArgumentParser({
+	version,
+	addHelp: true,
+	description: 'Compcreate is a command line tool for creating React components easily.',
+});
+
+parser.addArgument(['-d', '--directory'], {
+	help: `Creates a new directory for component files (default: ${config.createDirectory}).`,
+	action: 'storeTrue',
+});
+
+parser.addArgument(['-i', '--index'], {
+	help: `Creates an index.js file for easier importing from directory (default: ${config.createIndex}).`,
+	action: 'storeTrue',
+});
+
+parser.addArgument(['-s', '--stateless'], {
+	help: `Creates a stateless component that is included inside main component (default: ${config.createStateless}).`,
+	action: 'storeTrue',
+});
+
+parser.addArgument(['-c', '--scss'], {
+	help: `Creates a SCSS file for custom component styles (default: ${config.createScss}).`,
+	action: 'storeTrue',
+});
+
+const args = parser.parseArgs();
+
 if(process.argv.length < 3) {
-	console.log('compcreate must be passed in a path for a new component.');
-	console.log(`Example: compcreate /path/to/desired/component`);
+	// console.log('compcreate must be passed in a path for a new component.');
+	// console.log(`Example: compcreate /path/to/desired/component`);
 	process.exit(1);
 }
 
 const fs = require('fs');
 const path = require('path');
 
-let isDirectory = (dirPath) => {
-	return new Promise((resolve, reject) => {
-		fs.stat(dirPath, (err, stats) => {
-			if(err) {
-				if(err.code == 'ENOENT')
-					resolve(false);
-				else
-					reject(err);
-			}
-			else
-				resolve(stats.isDirectory());
-		});
-	});
-};
 
-let createDirectory = (dirPath) => {
-	return new Promise(async (resolve, reject) => {
-		try {
-			let exists = await isDirectory(dirPath);
+const templateFiles = ['template.js', 'template.stateless.js'];
 
-			if(!exists) {
-				fs.mkdir(dirPath, (err) => {
-					if(err)
-						reject(err);
-					else
-						resolve();
-				});
-			}
-			else
-				reject('Directory already exists');
-		}
-		catch(err) {
-			reject(err);
-		}
-	});
-};
-
-let getFileNameFromPath = (dirPath) => {
-	let splitPath = dirPath.split(path.sep);
+const getFileNameFromPath = (dirPath) => {
+	const splitPath = dirPath.split(path.sep);
 
 	if(splitPath.length > 0)
 		return splitPath[splitPath.length - 1];
@@ -55,9 +52,9 @@ let getFileNameFromPath = (dirPath) => {
 		return '';
 };
 
-let copyTemplate = (dirPath, filename) => {
+const copyTemplate = (dirPath, filename) => {
 	return new Promise((resolve, reject) => {
-		fs.copyFile(`${__dirname + path.sep}template.js`, `${dirPath + path.sep + filename}.js`, (err) => {
+		fs.copy(`${__dirname + path.sep}template`, `${dirPath}`, (err) => {
 			if(err)
 				reject(err);
 			else
@@ -66,7 +63,19 @@ let copyTemplate = (dirPath, filename) => {
 	});
 };
 
-let replaceTemplateParams = (dirPath, filename) => {
+const renameFile = (templateName, dirPath, filename) => {
+	const fname = filename + templateName.slice(8);
+	return new Promise((resolve, reject) => {
+		fs.move(`${dirPath + path.sep + templateName}`, `${dirPath + path.sep + fname}`, (err) => {
+			if(err)
+				reject(err);
+			else
+				resolve();
+		});
+	});
+};
+
+const replaceTemplateParams = (fname, dirPath, filename) => {
 	return new Promise((resolve, reject) => {
 		fs.readFile(`${dirPath + path.sep + filename}.js`, 'utf8', (err, data) => {
 			if(err) {
@@ -74,8 +83,8 @@ let replaceTemplateParams = (dirPath, filename) => {
 				return;
 			}
 
-			let className = `${filename.slice(0,1).toUpperCase()}${filename.slice(1)}`;
-			let newData = data.replace(/CLASSNAME/g, className);
+			const className = `${filename.slice(0, 1).toUpperCase()}${filename.slice(1)}`;
+			const newData = data.replace(/CLASSNAME/g, className);
 
 			fs.writeFile(`${dirPath + path.sep + filename}.js`, newData, (err) => {
 				if(err)
@@ -87,7 +96,7 @@ let replaceTemplateParams = (dirPath, filename) => {
 	});
 };
 
-let createScssFile = (dirPath, filename) => {
+const createScssFile = (dirPath, filename) => {
 	return new Promise((resolve, reject) => {
 		fs.writeFile(`${dirPath + path.sep + filename}.scss`, '', (err) => {
 			if(err)
@@ -98,12 +107,16 @@ let createScssFile = (dirPath, filename) => {
 	});
 }
 
-let createReactComponentFiles = async (dirPath) => {
+const createReactComponentFiles = async (dirPath) => {
 	try {
-		let filename = getFileNameFromPath(dirPath);
-		await createDirectory(dirPath);
+		const filename = getFileNameFromPath(dirPath);
+		const files = [...templateFiles.map( (fname) => `${filename + fname.slice(8)}`), 'index.js'];
+
 		await copyTemplate(dirPath, filename);
-		await replaceTemplateParams(dirPath, filename);
+		for(const fname of templateFiles)
+			await renameFile(fname, dirPath, filename);
+		for(const fname of files)
+			await replaceTemplateParams(fname, dirPath, filename);
 		await createScssFile(dirPath, filename);
 
 		console.log(`${dirPath} component created.`);
@@ -113,6 +126,5 @@ let createReactComponentFiles = async (dirPath) => {
 	}
 };
 
-for(let dirPath of process.argv.slice(2)) {
+for(const dirPath of process.argv.slice(2))
 	createReactComponentFiles(dirPath);
-}
