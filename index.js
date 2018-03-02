@@ -101,7 +101,7 @@ if(args['save_config']) {
 	config.createStateless = args.stateless;
 	config.createScss = args.scss;
 
-	fs.writeJsonSync(`${packageDirectory}config.json`, config);
+	fs.writeJsonSync(configDir, config);
 
 	// eslint-disable-next-line no-console
 	console.log('New configuration saved.');
