@@ -2,8 +2,15 @@
 
 const path = require('path');
 const fs = require('fs-extra');
+const os = require('os');
 const packageDirectory = __dirname + path.sep;
-const config = require(`${packageDirectory}config.json`);
+
+const configDir = `${os.homedir() + path.sep}.compcreatecfg.json`;
+
+if(!fs.pathExistsSync(configDir))
+	fs.copySync('./config.json', configDir);
+
+const config = require(configDir);
 const version = require(`${packageDirectory}package.json`).version;
 const ArgumentParser = require('argparse').ArgumentParser;
 
