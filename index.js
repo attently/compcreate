@@ -8,7 +8,7 @@ const packageDirectory = __dirname + path.sep;
 const configDir = `${os.homedir() + path.sep}.compcreatecfg.json`;
 
 if(!fs.pathExistsSync(configDir))
-	fs.copySync('./config.json', configDir);
+	fs.copySync(`${packageDirectory}config.json`, configDir);
 
 const config = require(configDir);
 const version = require(`${packageDirectory}package.json`).version;
