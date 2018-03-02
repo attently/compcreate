@@ -124,14 +124,15 @@ const getFileNameFromPath = (dirPath) => {
 };
 
 const getBaseDirectory = (dirPath) => {
+	const pwd = process.cwd() + path.sep;
 	const splitPath = dirPath.split(path.sep);
 
 	if(splitPath.length > 0) {
 		const baseChunks = splitPath.slice(0, splitPath.length - 1);
-		return baseChunks.join(path.sep);
+		return pwd + baseChunks.join(path.sep);
 	}
 	else
-		return '';
+		return pwd;
 };
 
 // fs-extra emptyDir function does not seem to work...
