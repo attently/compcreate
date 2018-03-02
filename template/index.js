@@ -1,2 +1,2 @@
-import CLASSNAME from './CLASSNAME.js';
+import CLASSNAME from './CLASSNAME';
 export default CLASSNAME;

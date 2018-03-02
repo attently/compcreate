@@ -1,6 +1,1 @@
-{
-	"createDirectory": true,
-	"createScss": false,
-	"createIndex": true,
-	"createStateless": false
-}
+{"createDirectory":true,"createScss":false,"createIndex":true,"createStateless":false}
