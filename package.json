@@ -1,6 +1,6 @@
 {
   "name": "@attently/compcreate",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A command line tool to create React components",
   "preferGlobal": true,
   "bin": {
