@@ -1,4 +1,4 @@
-// eslint-disable-next-line no-unused-vars
+// eslint-disable-next-line no-unused-vars, semi-spacing, semi
 import React, {Component} from 'react';STATELESS
 
 class CLASSNAME extends Component {
