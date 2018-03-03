@@ -61,37 +61,38 @@ const statelessPrompt = new Radio({
 
 const getConfig = async (configDir) => {
 	if(!fs.pathExistsSync(configDir)) {
-		let config = {};
+		const conf = {};
 		console.log('It looks like this is the first time you have run compcreate.');
 		await setupPrompt.run().then( async (answer) => {
-			if (answer == 'Personalize') {
-				config.createDirectory = await dirPrompt.run().then( (answer) => {
+			if(answer == 'Personalize') {
+				conf.createDirectory = await dirPrompt.run().then( (answer) => {
 					return answer == 'Yes' ? true : false;
 				});
 
-				config.createIndex = await (!config.createDirectory ? false : indexPrompt.run().then( (answer) => {
+				conf.createIndex = await (!conf.createDirectory ? false : indexPrompt.run().then( (answer) => {
 					return answer == 'Yes' ? true : false;
 				}));
 
-				config.createScss = await scssPrompt.run().then( (answer) => {
+				conf.createScss = await scssPrompt.run().then( (answer) => {
 					return answer == 'Yes' ? true : false;
 				});
 
-				config.createStateless = await statelessPrompt.run().then( (answer) => {
+				conf.createStateless = await statelessPrompt.run().then( (answer) => {
 					return answer == 'Yes' ? true : false;
-				})
+				});
 				
-				jsonfile.writeFileSync(configDir,config);
+				jsonfile.writeFileSync(configDir, conf);
 				return require(configDir);
-			} else {
+			}
+			else {
 				fs.copySync(`${packageDirectory}config.json`, configDir);
 				return require(configDir);
 			}
 		});
-	} else {
-		return require(configDir)
 	}
-}
+	else
+		return require(configDir);
+};
 
 const config = getConfig(configDir);
 const version = require(`${packageDirectory}package.json`).version;
