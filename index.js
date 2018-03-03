@@ -5,7 +5,6 @@ const fs = require('fs-extra');
 const os = require('os');
 const packageDirectory = __dirname + path.sep;
 const Radio = require('prompt-radio');
-const jsonfile = require('jsonfile');
 
 const configDir = `${os.homedir() + path.sep}.compcreatecfg.json`;
 
@@ -59,7 +58,7 @@ const statelessPrompt = new Radio({
 	],
 });
 
-const getConfig = async (configDir) => {
+const setupConfig = async (configDir) => {
 	if(!fs.pathExistsSync(configDir)) {
 		const conf = {};
 		console.log('It looks like this is the first time you have run compcreate.');
@@ -81,7 +80,7 @@ const getConfig = async (configDir) => {
 					return answer == 'Yes' ? true : false;
 				});
 				
-				jsonfile.writeFileSync(configDir, conf);
+				fs.writeJsonSync(configDir, conf);
 				return require(configDir);
 			}
 			else {
@@ -94,7 +93,13 @@ const getConfig = async (configDir) => {
 		return require(configDir);
 };
 
-const config = getConfig(configDir);
+let defaultDir = '';
+if(!fs.pathExistsSync(configDir)) {
+	setupConfig();
+	defaultDir = './config.json';
+};
+
+const config = require(defaultDir != '' ? defaultDir : configDir);
 const version = require(`${packageDirectory}package.json`).version;
 const ArgumentParser = require('argparse').ArgumentParser;
 
@@ -121,6 +126,7 @@ parser.addArgument(['names'], {
 	nargs: '*',
 });
 
+if(config) {
 parser.addArgument(['-d', '--directory'], {
 	help: `Creates a new directory for component files.`,
 	defaultValue: config.createDirectory,
@@ -152,9 +158,14 @@ parser.addArgument(['-c', '--scss'], {
 	const: true,
 	type: parseBool,
 });
-
+}
 parser.addArgument(['--save-config'], {
 	help: `Saves configuration used in command as new default.`,
+	action: 'storeTrue',
+});
+
+parser.addArgument(['--config'], {
+	help: `Step through the process of setting up a config file.`,
 	action: 'storeTrue',
 });
 
@@ -190,6 +201,19 @@ if(args['save_config']) {
 	// eslint-disable-next-line no-console
 	console.log('New configuration saved.');
 }
+
+if(args['config']) {
+	async () => {
+		console.log('starting config setup');
+		await setupConfig();
+	}
+
+	console.log('config');
+	process.exit(1);;
+};
+
+if(!fs.pathExistsSync(configDir)) 
+	console.log('you must run compcreate --config');
 
 if(!args.names.length) {
 	if(!args['save_config'])
