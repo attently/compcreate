@@ -4,13 +4,96 @@ const path = require('path');
 const fs = require('fs-extra');
 const os = require('os');
 const packageDirectory = __dirname + path.sep;
+const Radio = require('prompt-radio');
+const jsonfile = require('jsonfile');
 
 const configDir = `${os.homedir() + path.sep}.compcreatecfg.json`;
 
-if(!fs.pathExistsSync(configDir))
-	fs.copySync(`${packageDirectory}config.json`, configDir);
+const setupPrompt = new Radio({
+	name: 'setup',
+	message: 'Do you want personalize your settings or accept the defaults?',
+	choices: [
+		'Personalize',
+		'Defaults',
+	],
+});
+const dirPrompt = new Radio({
+	name: 'dir',
+	message: 'Do you want to create a new directory for your components?',
+	choices: [
+		'Yes',
+		'No',
+	],
+});
+const indexPrompt = new Radio({
+	name: 'index',
+	message: 'Do you want to create an index file in the directory?',
+	choices: [
+		'Yes',
+		'No',
+	],
+});
+const scssPrompt = new Radio({
+	name: 'scss',
+	message: 'Do you want to create scss files?',
+	choices: [
+		'Yes',
+		'No',
+	],
+});
+// const stylesPrompt = new Radio({
+// 	name: 'styles',
+// 	message: 'What type of styles do you prefer?',
+// 	choices: [
+// 		'css',
+// 		'scss',
+// 		'inline js',
+// 	],
+// });
+const statelessPrompt = new Radio({
+	name: 'stateless',
+	message: 'Do you want to create stateless components?',
+	choices: [
+		'Yes',
+		'No',
+	],
+});
 
-const config = require(configDir);
+const getConfig = async (configDir) => {
+	if(!fs.pathExistsSync(configDir)) {
+		let config = {};
+		console.log('It looks like this is the first time you have run compcreate.');
+		await setupPrompt.run().then( async (answer) => {
+			if (answer == 'Personalize') {
+				config.createDirectory = await dirPrompt.run().then( (answer) => {
+					return answer == 'Yes' ? true : false;
+				});
+
+				config.createIndex = await (!config.createDirectory ? false : indexPrompt.run().then( (answer) => {
+					return answer == 'Yes' ? true : false;
+				}));
+
+				config.createScss = await scssPrompt.run().then( (answer) => {
+					return answer == 'Yes' ? true : false;
+				});
+
+				config.createStateless = await statelessPrompt.run().then( (answer) => {
+					return answer == 'Yes' ? true : false;
+				})
+				
+				jsonfile.writeFileSync(configDir,config);
+				return require(configDir);
+			} else {
+				fs.copySync(`${packageDirectory}config.json`, configDir);
+				return require(configDir);
+			}
+		});
+	} else {
+		return require(configDir)
+	}
+}
+
+const config = getConfig(configDir);
 const version = require(`${packageDirectory}package.json`).version;
 const ArgumentParser = require('argparse').ArgumentParser;
 
