@@ -40,15 +40,6 @@ const scssPrompt = new Radio({
 		'No',
 	],
 });
-// const stylesPrompt = new Radio({
-// 	name: 'styles',
-// 	message: 'What type of styles do you prefer?',
-// 	choices: [
-// 		'css',
-// 		'scss',
-// 		'inline js',
-// 	],
-// });
 const statelessPrompt = new Radio({
 	name: 'stateless',
 	message: 'Do you want to create stateless components?',

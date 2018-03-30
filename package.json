@@ -27,7 +27,6 @@
   "dependencies": {
     "argparse": "^1.0.10",
     "fs-extra": "^5.0.0",
-    "jsonfile": "^4.0.0",
     "prompt-radio": "^1.2.1"
   }
 }
