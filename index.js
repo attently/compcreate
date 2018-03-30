@@ -76,14 +76,13 @@ const setupConfig = () => {
 			fs.copySync(`${packageDirectory}config.json`, configDir);
 
 		console.log(`Saved configuration in ${configDir}`);
+		main();
 	}).catch( (err) => {
 		console.log(err);
 	});
 };
 
-if(!fs.pathExistsSync(configDir))
-	setupConfig();
-else {
+const main = () => {
 	const config = require(configDir);
 	const version = require(`${packageDirectory}package.json`).version;
 	const ArgumentParser = require('argparse').ArgumentParser;
@@ -428,4 +427,9 @@ else {
 
 	for(const dirPath of args.names)
 		createReactComponentFiles(dirPath);
-}
+};
+
+if(!fs.pathExistsSync(configDir))
+	setupConfig();
+else
+	main();
