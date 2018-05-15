@@ -2,135 +2,11 @@
 
 const path = require('path');
 const fs = require('fs-extra');
-const os = require('os');
-const packageDirectory = __dirname + path.sep;
-const Radio = require('prompt-radio');
 const log = require('fancy-log');
 
-const configDir = `${os.homedir() + path.sep}.compcreatecfg.json`;
+const packageDirectory = __dirname + path.sep;
 
-const setupPrompt = new Radio({
-	name: 'setup',
-	message: 'Do you want personalize your settings?',
-	choices: [
-		'Yes',
-		'No',
-	],
-	default: 'Yes',
-});
-const dirPrompt = new Radio({
-	name: 'dir',
-	message: 'Do you want to create a new directory for your components?',
-	choices: [
-		'Yes',
-		'No',
-	],
-	default: 'Yes',
-});
-const indexPrompt = new Radio({
-	name: 'index',
-	message: 'Do you want to create an index file in the directory?',
-	choices: [
-		'Yes',
-		'No',
-	],
-	default: 'Yes',
-});
-const scssPrompt = new Radio({
-	name: 'scss',
-	message: 'Do you want to create scss files?',
-	choices: [
-		'Yes',
-		'No',
-	],
-	default: 'Yes',
-});
-const statelessPrompt = new Radio({
-	name: 'stateless',
-	message: 'Do you want to create stateless components?',
-	choices: [
-		'Yes',
-		'No',
-	],
-	default: 'Yes',
-});
-
-const wordToBool = (word) => {
-	if(word === undefined)
-		return false;
-
-	switch(word.toLowerCase()) {
-		case 'yes':
-		case '1':
-			return true;
-		case 'no':
-		case '0':
-			return false;
-	}
-};
-
-const setupConfig = async () => {
-	return new Promise(async (resolve, reject) => {
-		try {
-			const personalize = await setupPrompt.run();
-
-			if(wordToBool(personalize)) {
-				const createDirectory = await dirPrompt.run();
-
-				let createIndex = false;
-
-				if(createDirectory)
-					createIndex = await indexPrompt.run();
-
-				const createScss = await scssPrompt.run();
-
-				const createStateless = await statelessPrompt.run();
-
-				const conf = {
-					createDirectory,
-					createIndex,
-					createScss,
-					createStateless,
-				};
-
-				log(conf);
-
-				await fs.writeJson(configDir, conf);
-
-				resolve();
-			}
-			else {
-				await fs.copy(`${packageDirectory}config.json`, configDir);
-				resolve();
-			}
-		}
-		catch(err) {
-			reject(`Could not create config: ${err}`);
-		}
-	});
-};
-
-const getConfig = () => {
-	return new Promise(async (resolve, reject) => {
-		if(!fs.pathExistsSync(configDir)) {
-			try {
-				await setupConfig();
-
-				const config = require(configDir);
-
-				resolve(config);
-			}
-			catch(err) {
-				reject(err);
-			}
-		}
-		else {
-			const config = require(configDir);
-
-			resolve(config);
-		}
-	});
-};
+const config = require('./lib/config');
 
 const initializeArgs = (defaultsArgs) => {
 	const version = require(`${packageDirectory}package.json`).version;
@@ -222,8 +98,8 @@ const initializeArgs = (defaultsArgs) => {
 };
 
 const main = async () => {
-	const config = await getConfig();
-	const args = initializeArgs(config);
+	const conf = await config.getConfig();
+	const args = initializeArgs(conf);
 
 	const templateFile = 'template.js';
 	const statelessFile = 'template.stateless.js';
@@ -232,13 +108,13 @@ const main = async () => {
 	const backtracker = {};
 
 	if(args['save_config']) {
-		config.createDirectory = args.directory;
-		config.createIndex = args.index;
-		config.createStateless = args.stateless;
-		config.createScss = args.scss;
+		conf.createDirectory = args.directory;
+		conf.createIndex = args.index;
+		conf.createStateless = args.stateless;
+		conf.createScss = args.scss;
 
 		try {
-			await fs.writeJson(configDir, config);
+			await config.saveConfig(conf);
 			log('New configuration saved.');
 		}
 		catch(err) {
