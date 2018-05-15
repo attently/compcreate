@@ -5,16 +5,18 @@ const fs = require('fs-extra');
 const os = require('os');
 const packageDirectory = __dirname + path.sep;
 const Radio = require('prompt-radio');
+const log = require('fancy-log');
 
 const configDir = `${os.homedir() + path.sep}.compcreatecfg.json`;
 
 const setupPrompt = new Radio({
 	name: 'setup',
-	message: 'Do you want personalize your settings or accept the defaults?',
+	message: 'Do you want personalize your settings?',
 	choices: [
-		'Personalize',
-		'Defaults',
+		'Yes',
+		'No',
 	],
+	default: 'Yes',
 });
 const dirPrompt = new Radio({
 	name: 'dir',
@@ -23,6 +25,7 @@ const dirPrompt = new Radio({
 		'Yes',
 		'No',
 	],
+	default: 'Yes',
 });
 const indexPrompt = new Radio({
 	name: 'index',
@@ -31,6 +34,7 @@ const indexPrompt = new Radio({
 		'Yes',
 		'No',
 	],
+	default: 'Yes',
 });
 const scssPrompt = new Radio({
 	name: 'scss',
@@ -39,6 +43,7 @@ const scssPrompt = new Radio({
 		'Yes',
 		'No',
 	],
+	default: 'Yes',
 });
 const statelessPrompt = new Radio({
 	name: 'stateless',
@@ -47,43 +52,87 @@ const statelessPrompt = new Radio({
 		'Yes',
 		'No',
 	],
+	default: 'Yes',
 });
 
-const setupConfig = () => {
-	const conf = {};
-	return setupPrompt.run()
-	.then( async (answer) => {
-		if(answer == 'Personalize') {
-			conf.createDirectory = await dirPrompt.run().then( (answer) => {
-				return answer == 'Yes' ? true : false;
-			});
+const wordToBool = (word) => {
+	if(word === undefined)
+		return false;
 
-			conf.createIndex = await (!conf.createDirectory ? false : indexPrompt.run().then( (answer) => {
-				return answer == 'Yes' ? true : false;
-			}));
+	switch(word.toLowerCase()) {
+		case 'yes':
+		case '1':
+			return true;
+		case 'no':
+		case '0':
+			return false;
+	}
+};
 
-			conf.createScss = await scssPrompt.run().then( (answer) => {
-				return answer == 'Yes' ? true : false;
-			});
+const setupConfig = async () => {
+	return new Promise(async (resolve, reject) => {
+		try {
+			const personalize = await setupPrompt.run();
 
-			conf.createStateless = await statelessPrompt.run().then( (answer) => {
-				return answer == 'Yes' ? true : false;
-			});
+			if(wordToBool(personalize)) {
+				const createDirectory = await dirPrompt.run();
 
-			fs.writeJsonSync(configDir, conf);
+				let createIndex = false;
+
+				if(createDirectory)
+					createIndex = await indexPrompt.run();
+
+				const createScss = await scssPrompt.run();
+
+				const createStateless = await statelessPrompt.run();
+
+				const conf = {
+					createDirectory,
+					createIndex,
+					createScss,
+					createStateless,
+				};
+
+				log(conf);
+
+				await fs.writeJson(configDir, conf);
+
+				resolve();
+			}
+			else {
+				await fs.copy(`${packageDirectory}config.json`, configDir);
+				resolve();
+			}
 		}
-		else
-			fs.copySync(`${packageDirectory}config.json`, configDir);
-
-		console.log(`Saved configuration in ${configDir}`);
-		main();
-	}).catch( (err) => {
-		console.log(err);
+		catch(err) {
+			reject(`Could not create config: ${err}`);
+		}
 	});
 };
 
-const main = () => {
-	const config = require(configDir);
+const getConfig = () => {
+	return new Promise(async (resolve, reject) => {
+		if(!fs.pathExistsSync(configDir)) {
+			try {
+				await setupConfig();
+
+				const config = require(configDir);
+
+				resolve(config);
+			}
+			catch(err) {
+				reject(err);
+			}
+		}
+		else {
+			const config = require(configDir);
+
+			resolve(config);
+		}
+	});
+};
+
+const initializeArgs = (defaultsArgs) => {
 	const version = require(`${packageDirectory}package.json`).version;
 	const ArgumentParser = require('argparse').ArgumentParser;
 
@@ -94,7 +143,7 @@ const main = () => {
 			return false;
 		else {
 			// eslint-disable-next-line no-console
-			console.error(`Could not read value given as boolean: '${value}'`);
+			log.error(`Could not read value given as boolean: '${value}'`);
 			process.exit(1);
 		}
 	};
@@ -112,7 +161,7 @@ const main = () => {
 
 	parser.addArgument(['-d', '--directory'], {
 		help: `Creates a new directory for component files.`,
-		defaultValue: config.createDirectory,
+		defaultValue: defaultsArgs.createDirectory,
 		nargs: '?',
 		const: true,
 		type: parseBool,
@@ -120,7 +169,7 @@ const main = () => {
 
 	parser.addArgument(['-i', '--index'], {
 		help: `Creates an index.js file for easier importing from directory.`,
-		defaultValue: config.createIndex,
+		defaultValue: defaultsArgs.createIndex,
 		nargs: '?',
 		const: true,
 		type: parseBool,
@@ -128,7 +177,7 @@ const main = () => {
 
 	parser.addArgument(['-s', '--stateless'], {
 		help: `Creates a stateless component that is included inside main component.`,
-		defaultValue: config.createStateless,
+		defaultValue: defaultsArgs.createStateless,
 		nargs: '?',
 		const: true,
 		type: parseBool,
@@ -136,12 +185,12 @@ const main = () => {
 
 	parser.addArgument(['-c', '--scss'], {
 		help: `Creates a SCSS file for custom component styles.`,
-		defaultValue: config.createScss,
+		defaultValue: defaultsArgs.createScss,
 		nargs: '?',
 		const: true,
 		type: parseBool,
 	});
-	
+
 	parser.addArgument(['--save-config'], {
 		help: `Saves configuration used in command as new default.`,
 		action: 'storeTrue',
@@ -162,6 +211,20 @@ const main = () => {
 	if(args.scss === null)
 		args.scss = true;
 
+	if(!args.names.length) {
+		if(!args['save_config'])
+			parser.printHelp();
+
+		process.exit(1);
+	}
+
+	return args;
+};
+
+const main = async () => {
+	const config = await getConfig();
+	const args = initializeArgs(config);
+
 	const templateFile = 'template.js';
 	const statelessFile = 'template.stateless.js';
 	const indexFile = 'index.js';
@@ -174,17 +237,13 @@ const main = () => {
 		config.createStateless = args.stateless;
 		config.createScss = args.scss;
 
-		fs.writeJsonSync(configDir, config);
-
-		// eslint-disable-next-line no-console
-		console.log('New configuration saved.');
-	}
-
-	if(!args.names.length) {
-		if(!args['save_config'])
-			parser.printHelp();
-
-		process.exit(1);
+		try {
+			await fs.writeJson(configDir, config);
+			log('New configuration saved.');
+		}
+		catch(err) {
+			log.error(`Could not save new configuration: ${err}`);
+		}
 	}
 
 	const getFileNameFromPath = (dirPath) => {
@@ -278,7 +337,7 @@ const main = () => {
 				}
 				catch(err) {
 					// eslint-disable-next-line no-console
-					console.error(`Could not create directory ${dirPath}: ${err}`);
+					log.error(`Could not create directory ${dirPath}: ${err}`);
 
 					cleanupAndExit();
 				}
@@ -289,14 +348,14 @@ const main = () => {
 
 					if(!empty) {
 						// eslint-disable-next-line no-console
-						console.error(`Directory ${dirPath} not empty.`);
+						log.error(`Directory ${dirPath} not empty.`);
 
 						cleanupAndExit();
 					}
 				}
 				catch(err) {
 					// eslint-disable-next-line no-console
-					console.error(`Could not verify that directory ${dirPath} is empty: ${err}`);
+					log.error(`Could not verify that directory ${dirPath} is empty: ${err}`);
 
 					cleanupAndExit();
 				}
@@ -329,14 +388,14 @@ const main = () => {
 			}
 			catch(err) {
 				// eslint-disable-next-line no-console
-				console.error(`Could not replace contents of template ${mainFilePath}: ${err}`);
+				log.error(`Could not replace contents of template ${mainFilePath}: ${err}`);
 
 				cleanupAndExit();
 			}
 		}
 		catch(err) {
 			// eslint-disable-next-line no-console
-			console.error(`Could not copy template ${template}: ${err}`);
+			log.error(`Could not copy template ${template}: ${err}`);
 
 			cleanupAndExit();
 		}
@@ -347,7 +406,7 @@ const main = () => {
 
 			if(!args.directory)
 				// eslint-disable-next-line no-console
-				console.warn(`Component not being created with directory. Did not create ${filePath}.`);
+				log.warn(`Component not being created with directory. Did not create ${filePath}.`);
 			else {
 				try {
 					await fs.copy(template, filePath);
@@ -358,14 +417,14 @@ const main = () => {
 					}
 					catch(err) {
 						// eslint-disable-next-line no-console
-						console.error(`Could not replace contents of template ${filePath}: ${err}`);
+						log.error(`Could not replace contents of template ${filePath}: ${err}`);
 
 						cleanupAndExit();
 					}
 				}
 				catch(err) {
 					// eslint-disable-next-line no-console
-					console.error(`Could not copy template ${template}: ${err}`);
+					log.error(`Could not copy template ${template}: ${err}`);
 
 					cleanupAndExit();
 				}
@@ -385,14 +444,14 @@ const main = () => {
 				}
 				catch(err) {
 					// eslint-disable-next-line no-console
-					console.error(`Could not replace contents of template ${filePath}: ${err}`);
+					log.error(`Could not replace contents of template ${filePath}: ${err}`);
 
 					cleanupAndExit();
 				}
 			}
 			catch(err) {
 				// eslint-disable-next-line no-console
-				console.error(`Could not copy template ${template}: ${err}`);
+				log.error(`Could not copy template ${template}: ${err}`);
 
 				cleanupAndExit();
 			}
@@ -410,18 +469,18 @@ const main = () => {
 				}
 				catch(err) {
 					// eslint-disable-next-line no-console
-					console.error(`Could not create ${filePath}: ${err}`);
+					log.error(`Could not create ${filePath}: ${err}`);
 
 					cleanupAndExit();
 				}
 			}
 		}
-		
+
 		// eslint-disable-next-line no-console
-		console.log('Successfully created files:');
+		log('Successfully created files:');
 		backtracker[dirPath].filesCreated.forEach((file) => {
 			// eslint-disable-next-line no-console
-			console.log(file);
+			log(file);
 		});
 	};
 
@@ -429,7 +488,4 @@ const main = () => {
 		createReactComponentFiles(dirPath);
 };
 
-if(!fs.pathExistsSync(configDir))
-	setupConfig();
-else
-	main();
+main();
