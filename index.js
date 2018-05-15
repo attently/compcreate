@@ -7,6 +7,7 @@ const log = require('fancy-log');
 const packageDirectory = __dirname + path.sep;
 
 const config = require('./lib/config');
+const jsdocDefs = require('./lib/jsdocDefs');
 
 const templateFile = 'template.js';
 const statelessFile = 'template.stateless.js';
@@ -67,6 +68,14 @@ const initializeArgs = (defaultsArgs) => {
 	parser.addArgument(['-c', '--scss'], {
 		help: `Creates a SCSS file for custom component styles.`,
 		defaultValue: defaultsArgs.createScss,
+		nargs: '?',
+		const: true,
+		type: parseBool,
+	});
+
+	parser.addArgument(['-j', '--jsdoc'], {
+		help: `Inserts JSDoc comments into generated component.`,
+		defaultValue: defaultsArgs.insertJsdoc,
 		nargs: '?',
 		const: true,
 		type: parseBool,
@@ -221,20 +230,42 @@ const setupMainTemplate = (baseDirectory, componentName, args) => {
 		try {
 			await fs.copy(template, mainFilePath);
 
+			let replacements = [
+				['CLASSNAME', componentName],
+				[
+					'STATELESS',
+					args.stateless ?
+						`\nimport ${componentName}Stateless from './${componentName}.stateless';` : '',
+				],
+				[
+					'RETURNCONTENTS',
+					args.stateless ?
+						`<${componentName}Stateless />;` : '<div></div>',
+				],
+			];
+
+			for(const key in jsdocDefs) {
+				if(Object.hasOwnProperty.call(jsdocDefs, key)) {
+					if(args.jsdoc) {
+						/*
+						 * JSDoc changes must come before others
+						 * because they may include template variables.
+						 */
+						replacements = [
+							[key, jsdocDefs[key]],
+							...replacements,
+						];
+					}
+					else {
+						replacements.push([key, '']);
+					}
+				}
+			}
+
+			replacements.push(['\n\n\n', '\n']);
+
 			try {
-				await replaceInFile(mainFilePath, [
-					['CLASSNAME', componentName],
-					[
-						'STATELESS',
-						args.stateless ?
-							`\nimport ${componentName}Stateless from './${componentName}.stateless';` : '',
-					],
-					[
-						'RETURNCONTENTS',
-						args.stateless ?
-							`<${componentName}Stateless />;` : '<div></div>',
-					],
-				]);
+				await replaceInFile(mainFilePath, replacements);
 
 				resolve(mainFilePath);
 			}
@@ -278,10 +309,32 @@ const setupStatelessTemplate = (baseDirectory, componentName, args) => {
 
 		try {
 			await fs.copy(template, filePath);
+			let replacements = [
+				['CLASSNAME', componentName],
+			];
 
+			for(const key in jsdocDefs) {
+				if(Object.hasOwnProperty.call(jsdocDefs, key)) {
+					if(args.jsdoc) {
+						/*
+						 * JSDoc changes must come before others
+						 * because they may include template variables.
+						 */
+						replacements = [
+							[key, jsdocDefs[key]],
+							...replacements,
+						];
+					}
+					else {
+						replacements.push([key, '']);
+					}
+				}
+			}
+
+			replacements.push(['\n\n\n', '\n']);
 
 			try {
-				await replaceInFile(filePath, [['CLASSNAME', componentName]]);
+				await replaceInFile(filePath, replacements);
 
 				resolve(filePath);
 			}
@@ -367,7 +420,7 @@ const createReactComponentFiles = async (dirPath, args) => {
 };
 
 const main = async () => {
-	const conf = await config.getConfig();
+	const conf = {...config.defaultConfig, ...(await config.getConfig())};
 	const args = initializeArgs(conf);
 
 	if(args['save_config']) {
