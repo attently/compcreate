@@ -8,8 +8,6 @@ class CLASSNAME extends Component {
 		this.state = {};
 	}
 
-	componentWillMount() {}
-
 	render() {
 		return (
 			RETURNCONTENTS
@@ -18,23 +16,27 @@ class CLASSNAME extends Component {
 
 	componentDidMount() {}
 
-	componentWillReceiveProps() {}
-
-	shouldComponentUpdate() {
+	shouldComponentUpdate(nextProps, nextState) {
 		return true;
 	}
 
-	componentWillUpdate() {}
-
-	componentDidUpdate() {}
+	componentDidUpdate(prevProps, prevState, snapshot) {}
 
 	componentWillUnmount() {}
 
-	componentDidCatch() {}
+	componentDidCatch(error, info) {}
+
+	getSnapshotbeforeUpdate(prevProps, prevState) {
+		return null;
+	}
+
+	static getDerivedStateFromProps(nextProps, prevState) {
+		return null;
+	}
 }
 
 CLASSNAME.defaultProps = {
-	
+
 };
 
 CLASSNAME.displayName = 'CLASSNAME';
