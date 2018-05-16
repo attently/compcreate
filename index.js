@@ -196,7 +196,7 @@ const setupDirectory = (dirPath) => {
 
 					backtracker[dirPath].directoriesCreated.push(dirPath);
 
-					resolve(baseDirectory + componentName);
+					resolve(baseDirectory + path.sep + componentName);
 				}
 				catch(err) {
 					reject(`Could not create directory ${dirPath}: ${err}`);
@@ -209,7 +209,7 @@ const setupDirectory = (dirPath) => {
 					if(!empty)
 						reject(`Directory ${dirPath} not empty.`);
 					else
-						resolve(baseDirectory + componentName);
+						resolve(baseDirectory + path.sep + componentName);
 				}
 				catch(err) {
 					reject(`Could not verify that directory ${dirPath} is empty: ${err}`);
