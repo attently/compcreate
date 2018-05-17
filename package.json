@@ -8,7 +8,7 @@
 	},
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"deploy": "git checkout master && git merge dev && git push origin master && yarn publish && git tag "v$(./index.js -v)" && git checkout dev && git merge master"
+		"deploy": "git checkout master && git merge dev && git push origin master && yarn publish && git tag \"v$(./index.js -v)\" && git checkout dev && git merge master"
 	},
 	"repository": {
 		"type": "git",
@@ -23,7 +23,7 @@
 	"contributors": [
 		{
 			"name": "Dustin L. Dodson",
-			"email": "dustin@attently.io",
+			"email": "dustin@attently.io"
 		},
 		{
 			"name": "Jason Warta",
