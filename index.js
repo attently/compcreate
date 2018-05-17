@@ -235,12 +235,12 @@ const setupMainTemplate = (baseDirectory, componentName, args) => {
 				[
 					'STATELESS',
 					args.stateless ?
-						`\nimport ${componentName}Stateless from './${componentName}.stateless';` : '',
+						`import ${componentName}Stateless from './${componentName}.stateless';` : '\n',
 				],
 				[
 					'RETURNCONTENTS',
 					args.stateless ?
-						`<${componentName}Stateless />;` : '<div></div>',
+						`<${componentName}Stateless />` : '<div></div>',
 				],
 			];
 

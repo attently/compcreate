@@ -1,6 +1,7 @@
-// eslint-disable-next-line no-unused-vars, semi-spacing, semi
-import React, {Component} from 'react';STATELESS
+import {Component} from 'react';
+STATELESS
 
+JSDOC_CLASS
 class CLASSNAME extends Component {
 	JSDOC_CONSTRUCTOR
 	constructor(props) {
