@@ -1,5 +1,3 @@
-import React from 'react';
-
 JSDOC_STATELESS
 export default function CLASSNAMEStateless(props) {
 	return (
